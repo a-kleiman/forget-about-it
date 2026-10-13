@@ -4,7 +4,7 @@ Code for the paper
 
 > **Forget About It: Mitigating Forgetting Without Replay or Auxiliary Objectives**<br>
 > Anat Kleiman, Gintare Karolina Dziugaite, Jonathan Frankle, Sham Kakade, Mansheej Paul<br>
-> Preprint, 2026. [arXiv link to be added]
+> arXiv preprint [arXiv:2501.05559](https://arxiv.org/abs/2501.05559)
 
 The paper studies simple in-training interpolation as a forgetting-mitigation baseline: **Sequential Fine-tuning with
 Averaging (SFA)**, introduced in the paper, and replay-free **Lookahead**. This repository reproduces the controlled
@@ -17,9 +17,6 @@ multi-seed Qwen3 experiments:
    Answers → AG News; Section 5.3, Figure 3 and Appendices A and C): SFA vs. sequential LoRA, replay, AIMMerging (our port,
    see **Third-party code and data**) and Lookahead, coefficient selection, SFA with replay (SFA-R), a reversed task order,
    and a controlled single-stage training-time benchmark (Figure 3b).
-
-The other experiments reported in the paper (Llama 2-7B Math → Law, full-parameter four-task replay comparison, and the
-model-family and vision experiments in Appendices F–H) are not part of this release.
 
 **SFA** periodically interpolates the working weights toward a checkpoint that is held fixed for the whole current task
 (the weights at the start of the task), and then continues training from the interpolated weights:
@@ -179,10 +176,12 @@ mean training-loop time per method and its ratio to SFA. This measures one train
 
 ```bibtex
 @article{kleiman2026forget,
-  title   = {Forget About It: Mitigating Forgetting Without Replay or Auxiliary Objectives},
-  author  = {Kleiman, Anat and Dziugaite, Gintare Karolina and Frankle, Jonathan and Kakade, Sham and Paul, Mansheej},
-  journal = {arXiv preprint},
-  year    = {2026}
+  title         = {Forget About It: Mitigating Forgetting Without Replay or Auxiliary Objectives},
+  author        = {Kleiman, Anat and Dziugaite, Gintare Karolina and Frankle, Jonathan and Kakade, Sham and Paul, Mansheej},
+  journal       = {arXiv preprint arXiv:2501.05559},
+  eprint        = {2501.05559},
+  archivePrefix = {arXiv},
+  year          = {2026}
 }
 ```
 
