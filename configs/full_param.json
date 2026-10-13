@@ -1,0 +1,73 @@
+{
+ "description": "Full-parameter Math->Law sequential fine-tuning of Qwen3-1.7B (chat template, thinking disabled).",
+ "protocol": {
+  "model": "Qwen/Qwen3-1.7B (revision in configs/models.json)",
+  "loss": "response-only (assistant content + <|im_end|>), token-mean over each global batch; prompts and padding masked",
+  "max_len": 4096, "global_batch_sequences": 32, "token_budget_per_task": 10000000,
+  "optimizer": "AdamW (fused), betas (0.9, 0.999), eps 1e-8, weight decay 0, clip 1.0; warmup 3% (ceil) then cosine to 0",
+  "precision": "fp32 master weights, bf16 autocast, TF32 off",
+  "task_boundary": "fresh optimizer and LR schedule per task; Adam moments retained across within-task merges",
+  "sfa": "k = max(1, floor(p*T + 0.5)); merges at {k, 2k, ...} U {T}; w <- (1-beta) w + beta a, a = immutable task-start copy; matched strength beta = 1 - (1 - beta_end)^(1/K)",
+  "lookahead": "slow s initialized at task start; at the same events s <- (1-beta) w + beta s; w <- s",
+  "ema": "eval-only shadow updated every step, never copied into the learner",
+  "endpoint": "evaluation-time interpolation (1-beta) w_T + beta a of the final FT weights with the Math start",
+  "evaluation": "GSM8K: greedy decoding, max 1024 new tokens, answer extraction 'The answer is' > \\boxed{} > last number; Law: candidate scoring by mean token log-probability of each option (+ <|im_end|>), unweighted mean of CaseHOLD / ToS / Overruling accuracy",
+  "dev_sets": "GSM8K: 500 held-out GSM8K-train questions; Law: CaseHOLD validation + 5% label-stratified ToS / Overruling train",
+  "test_sets": "GSM8K test (1319); CaseHOLD test (3600), ToS test (2354), Overruling test (600)",
+  "development_seed": 17, "replication_seeds": [42, 123], "additional_replication_seeds": [7, 2026]
+ },
+ "math_start": {"run_id": "math_ft_s{seed}", "args": ["--task", "math", "--init", "base", "--schedule", "runs/schedules/math_s{seed}_b10M",
+                "--method", "ft", "--lr", "1e-5", "--heldout_tasks", "math", "law"]},
+ "law_runs": {
+  "ft":               {"label": "FT (lr 1e-5)",                 "args": ["--method", "ft", "--lr", "1e-5", "--ema", "0.9", "0.99", "0.999"]},
+  "ft_lr5e-6":        {"label": "FT (lr 5e-6)",                 "args": ["--method", "ft", "--lr", "5e-06"]},
+  "ft_lr2.5e-6":      {"label": "FT (lr 2.5e-6)",               "args": ["--method", "ft", "--lr", "2.5e-06"]},
+  "sfamatch_e25_p25": {"label": "SFA (beta_end 0.25, p 0.25)",  "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.25", "--beta_end", "0.25"]},
+  "sfamatch_e50_p25": {"label": "SFA (beta_end 0.5, p 0.25)",   "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.25", "--beta_end", "0.5"]},
+  "sfamatch_e75_p25": {"label": "SFA (beta_end 0.75, p 0.25)",  "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.25", "--beta_end", "0.75"]},
+  "look_b25_p25":     {"label": "Lookahead (beta 0.25, p 0.25)", "args": ["--method", "lookahead", "--lr", "1e-05", "--p", "0.25", "--beta", "0.25"]},
+  "look_b50_p25":     {"label": "Lookahead (beta 0.5, p 0.25)",  "args": ["--method", "lookahead", "--lr", "1e-05", "--p", "0.25", "--beta", "0.5"]},
+  "look_b75_p25":     {"label": "Lookahead (beta 0.75, p 0.25)", "args": ["--method", "lookahead", "--lr", "1e-05", "--p", "0.25", "--beta", "0.75"]},
+  "sfa_b50_p25":      {"label": "SFA (per-merge beta 0.5, p 0.25)", "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.25", "--beta", "0.5"]},
+  "sfa_b50_p50":      {"label": "SFA (per-merge beta 0.5, p 0.5)",  "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.5", "--beta", "0.5"]},
+  "sfa_b50_p98":      {"label": "SFA (per-merge beta 0.5, p 0.98)", "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.98", "--beta", "0.5"]},
+  "sfamatch_e50_p50": {"label": "SFA (beta_end 0.5, p 0.5)",   "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.5", "--beta_end", "0.5"]},
+  "sfamatch_e50_p98": {"label": "SFA (beta_end 0.5, p 0.98)",  "args": ["--method", "sfa", "--lr", "1e-05", "--p", "0.98", "--beta_end", "0.5"]},
+  "look_b50_p50":     {"label": "Lookahead (beta 0.5, p 0.5)",  "args": ["--method", "lookahead", "--lr", "1e-05", "--p", "0.5", "--beta", "0.5"]},
+  "look_b50_p98":     {"label": "Lookahead (beta 0.5, p 0.98)", "args": ["--method", "lookahead", "--lr", "1e-05", "--p", "0.98", "--beta", "0.5"]}
+ },
+ "eval_only": {
+  "ft_ema0.9":   {"source": "runs/m2l_s{seed}_ft/ema0.9"},
+  "ft_ema0.99":  {"source": "runs/m2l_s{seed}_ft/ema0.99"},
+  "ft_ema0.999": {"source": "runs/m2l_s{seed}_ft/ema0.999"},
+  "endpoint_b0.125":  {"source": "interp:runs/m2l_s{seed}_ft/final:runs/math_ft_s{seed}/final:0.125"},
+  "endpoint_b0.25":   {"source": "interp:runs/m2l_s{seed}_ft/final:runs/math_ft_s{seed}/final:0.25"},
+  "endpoint_b0.5":    {"source": "interp:runs/m2l_s{seed}_ft/final:runs/math_ft_s{seed}/final:0.5"},
+  "endpoint_b0.75":   {"source": "interp:runs/m2l_s{seed}_ft/final:runs/math_ft_s{seed}/final:0.75"},
+  "endpoint_b0.875":  {"source": "interp:runs/m2l_s{seed}_ft/final:runs/math_ft_s{seed}/final:0.875"},
+  "endpoint_b0.9375": {"source": "interp:runs/m2l_s{seed}_ft/final:runs/math_ft_s{seed}/final:0.9375"}
+ },
+ "sets": {
+  "selection_dev": {"seeds": [17], "splits": ["dev"],
+                    "law_runs": ["ft", "ft_lr5e-6", "ft_lr2.5e-6", "sfamatch_e25_p25", "sfamatch_e50_p25", "sfamatch_e75_p25",
+                                 "look_b25_p25", "look_b50_p25", "look_b75_p25"],
+                    "eval_only": ["ft_ema0.9", "ft_ema0.99", "ft_ema0.999", "endpoint_b0.125", "endpoint_b0.25", "endpoint_b0.5",
+                                  "endpoint_b0.75", "endpoint_b0.875", "endpoint_b0.9375"]},
+  "merge_fraction_dev": {"seeds": [17], "splits": ["dev"],
+                         "law_runs": ["sfa_b50_p25", "sfa_b50_p50", "sfa_b50_p98", "sfamatch_e50_p50", "sfamatch_e50_p98", "look_b50_p50", "look_b50_p98"],
+                         "eval_only": []},
+  "main_test": {"seeds": [17, 42, 123], "splits": ["dev", "test"],
+                "law_runs": ["ft", "ft_lr5e-6", "sfamatch_e25_p25", "sfamatch_e50_p25", "look_b50_p25"],
+                "eval_only": ["ft_ema0.999", "endpoint_b0.5"]},
+  "replication_test": {"seeds": [7, 2026], "splits": ["dev", "test"],
+                       "law_runs": ["ft_lr5e-6", "sfamatch_e50_p25", "look_b50_p25"], "eval_only": []}
+ },
+ "selection_rule": {
+  "reference": "L_ref = seed-17 development Law accuracy of FT at lr 1e-5",
+  "requirements": {"R_tight": 0.005, "R_mid": 0.010, "R_loose": 0.020},
+  "candidates": {"SFA": {"0.5": "sfamatch_e50_p25", "0.25": "sfamatch_e25_p25", "0.75": "sfamatch_e75_p25"},
+                 "Lookahead": {"0.5": "look_b50_p25", "0.25": "look_b25_p25", "0.75": "look_b75_p25"},
+                 "FT": {"1e-5": "ft", "5e-6": "ft_lr5e-6", "2.5e-6": "ft_lr2.5e-6"}},
+  "rule": "for each method and requirement: among candidates with development Law >= L_ref - tolerance, choose the highest development GSM8K accuracy; ties within 0.002 (one question) -> the default configuration (first listed), then higher Law, then the larger coefficient / learning rate; none feasible -> infeasible"
+ }
+}

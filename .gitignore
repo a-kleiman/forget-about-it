@@ -1,0 +1,10 @@
+# generated at run time (can be very large)
+runs/
+results/
+cache/
+data/raw/
+data/processed/
+data/tokenized/
+__pycache__/
+*.pyc
+.pytest_cache/

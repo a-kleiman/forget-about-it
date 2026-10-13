@@ -1,0 +1,24 @@
+{
+ "default_model": "Qwen/Qwen3-1.7B",
+ "models": {
+  "Qwen/Qwen3-1.7B": {"revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e", "run_prefix": "lora", "adapter_microbatch_tokens": 16384},
+  "Qwen/Qwen3-8B": {"revision": "b968826d9c46dd6066d109eabc6255188de91218", "run_prefix": "lora8b", "adapter_microbatch_tokens": 8192},
+  "Qwen/Qwen3-14B": {"revision": "40c069824f4251a91eefaf281ebe4c544efd3e18", "run_prefix": "lora14b", "adapter_microbatch_tokens": 4096},
+  "Qwen/Qwen3-32B": {"revision": "9216db5781bf21249d130ec9da846c4624c16137", "run_prefix": "lora32b", "adapter_microbatch_tokens": 2048,
+                     "activation_checkpointing": true}
+ },
+ "datasets": {
+  "meta-math/MetaMathQA": "aa4f34d3d2d3231299b5b03d9b3e5a20da45aa18",
+  "openai/gsm8k": "740312add88f781978c0658806c59bc2815b9866",
+  "coastalcph/lex_glue": "c23fdff1a6bf74e0e1a71cb86f1e781d37da888c",
+  "LawInformedAI/claudette_tos": "08462daa2bac2e2440509138fb0a5b3edd743af4",
+  "LawInformedAI/overruling": "5d8dc61d7a9c38afd76374610bee4760551c88fb"
+ },
+ "continual_learning_source": {
+  "repository": "https://github.com/WoodScene/Recurrent_KIF",
+  "commit": "adc7f1e",
+  "path": "data_longsequence/{train,dev,test}/{dbpedia,amazon,yahoo,agnews}.json"
+ },
+ "reference_environment": {"python": "3.12.8", "torch": "2.13.0+cu130", "transformers": "5.18.0", "vllm": "0.30.0", "peft": "0.21.2",
+                           "accelerate": "1.15.0", "gpu": "1x NVIDIA H200 (141 GB) per run"}
+}

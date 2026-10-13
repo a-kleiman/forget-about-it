@@ -1,0 +1,13 @@
+# Versions used for all reported runs (Python 3.12, CUDA 13 driver, NVIDIA H200).
+# torch was installed from the PyTorch CUDA 13.0 wheel index (e.g. --index-url https://download.pytorch.org/whl/cu130).
+torch==2.13.0
+transformers==5.18.0
+tokenizers==0.23.2
+vllm==0.30.0
+peft==0.21.2
+accelerate==1.15.0
+datasets==5.0.1
+huggingface_hub==1.33.0
+safetensors==0.8.0
+numpy==2.3.5
+matplotlib==3.11.2
